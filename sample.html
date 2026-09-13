@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Snake game</title>
+
+<style>
+body{
+    background:#2152c5;
+    color:rgb(224, 51, 51);
+    text-align:center;
+    font-family:Arial;
+}
+
+canvas{
+    background:rgb(161, 137, 137);
+    margin-top:20px;
+    border:2px solid #416474;
+}
+
+button{
+    margin-top:10px;
+    padding:10px 20px;
+    cursor:pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1> Snake remake</h1>
+
+<h2>Score: <span id="score">0</span></h2>
+<h3>High Score: <span id="highScore">0</span></h3>
+
+<canvas id="game" width="400" height="400"></canvas>
+
+<br>
+<button onclick="startGame()">Start Game</button>
+
+<script>
+
+let canvas = document.getElementById("game");
+let ctx = canvas.getContext("2d");
+
+let grid = 20;
+let count = 0;
+let speed = 16;
+let snake, apple, score;
+let running = false;
+let highScore = localStorage.getItem("highScore") || 0;
+document.getElementById("highScore").innerText = highScore;
+function startGame(){
+
+    snake = {
+        x:160,
+        y:160,
+        dx:grid,
+        dy:0,
+        cells:[],
+        maxCells:4
+    };
+
+    apple = {
+        x:320,
+        y:320
+    };
+
+    score = 0;
+    speed = 16; 
+    running = true;
+
+    document.getElementById("score").innerText = score;
+}
+function loop(){
+    requestAnimationFrame(loop);
+
+    if(!running) return;
+
+    if(++count < speed) return;
+    count = 0;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    snake.x += snake.dx;
+    snake.y += snake.dy;
+    if(snake.x < 0 || snake.y < 0 ||
+       snake.x >= canvas.width || snake.y >= canvas.height){
+        gameOver();
+    }
+
+    snake.cells.unshift({x:snake.x, y:snake.y});
+
+    if(snake.cells.length > snake.maxCells){
+        snake.cells.pop();
+    }
+    ctx.fillStyle="red";
+    ctx.fillRect(apple.x, apple.y, grid-2, grid-2);
+    ctx.fillStyle="#38bdf8";
+
+    snake.cells.forEach((cell, index)=>{
+
+        ctx.fillRect(cell.x, cell.y, grid-2, grid-2);
+        if(cell.x === apple.x && cell.y === apple.y){
+
+            snake.maxCells++;
+            score++;
+            eatSound.play();
+            if(score % 5 === 0 && speed > 10){
+                speed--;
+            }
+
+            document.getElementById("score").innerText = score;
+
+            apple.x = Math.floor(Math.random()*20)*grid;
+            apple.y = Math.floor(Math.random()*20)*grid;
+        }
+        for(let i=index+1;i<snake.cells.length;i++){
+            if(cell.x === snake.cells[i].x &&
+               cell.y === snake.cells[i].y){
+                gameOver();
+            }
+        }
+
+    });
+}
+
+function gameOver(){
+    overSound.play();
+    running = false;
+
+    if(score > highScore){
+        highScore = score;
+        localStorage.setItem("highScore", highScore);
+    }
+
+    document.getElementById("highScore").innerText = highScore;
+
+    alert("Game Over");
+}
+document.addEventListener("keydown", e=>{
+
+    if(e.key==="a" && snake.dx===0){
+        snake.dx=-grid; snake.dy=0;
+    }
+    else if(e.key==="w" && snake.dy===0){
+        snake.dy=-grid; snake.dx=0;
+    }
+    else if(e.key==="d" && snake.dx===0){
+        snake.dx=grid; snake.dy=0;
+    }
+    else if(e.key==="s" && snake.dy===0){
+        snake.dx=0; snake.dy=grid;
+    }
+
+});
+
+let startX, startY;
+
+canvas.addEventListener("touchstart", e=>{
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+});
+
+canvas.addEventListener("touchend", e=>{
+    let dx = e.changedTouches[0].clientX - startX;
+    let dy = e.changedTouches[0].clientY - startY;
+
+    if(Math.abs(dx) > Math.abs(dy)){
+        if(dx > 0 && snake.dx === 0){
+            snake.dx = grid; snake.dy = 0;
+        } else if(dx < 0 && snake.dx === 0){
+            snake.dx = -grid; snake.dy = 0;
+        }
+    } else {
+        if(dy > 0 && snake.dy === 0){
+            snake.dy = grid; snake.dx = 0;
+        } else if(dy < 0 && snake.dy === 0){
+            snake.dy = -grid; snake.dy = 0;
+        }
+    }
+});
+
+requestAnimationFrame(loop);
+
+</script>
+
+</body>
+</html>
